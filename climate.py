@@ -70,7 +70,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async def async_set_data(data):
         try:
-            resp = await session.get(f"http://{CONF_HOST}:{CONF_PORT}/setAircon", params={'json':json.dumps(data)}) 
+            resp = await session.get(f"http://{CONF_HOST}:{CONF_PORT}/setAircon", params={'json':json.dumps(data)})
             return (await resp.json())
         except Exception as err:
             raise UpdateFailed(f"Error updating MyAir setting: {err} {data}")
@@ -207,7 +207,7 @@ class MyAirZone(ClimateEntity):
 
     @property
     def name(self):
-        return self.coordinator.data[self.acx][self.zx]['name']
+        return self.coordinator.data[self.acx]['zones'][self.zx]['name']
 
     @property
     def temperature_unit(self):
@@ -215,32 +215,32 @@ class MyAirZone(ClimateEntity):
 
     @property
     def target_temperature(self):
-        if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
-            raise NotImplementedError
-        else:
-            return self.coordinator.data[self.acx][self.zx]['setTemp']
+        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #    raise NotImplementedError
+        #else:
+        return self.coordinator.data[self.acx]['zones'][self.zx]['setTemp']
             
 
     @property
     def target_temperature_step(self):
-        if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
-            raise NotImplementedError
-        else:
-            return 1
+        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #    raise NotImplementedError
+        #else:
+        return 1
 
     @property
     def max_temp(self):
-        if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
-            raise NotImplementedError
-        else:
-            return 32
+        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #    raise NotImplementedError
+        #else:
+        return 32
 
     @property
     def min_temp(self):
-        if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
-            raise NotImplementedError
-        else:
-            return 16
+        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #    raise NotImplementedError
+        #else:
+        return 16
 
     @property
     def hvac_mode(self):
@@ -255,10 +255,10 @@ class MyAirZone(ClimateEntity):
 
     @property
     def fan_mode(self):
-        if(self.coordinator.data[self.acx][self.zx]['state'] == "open"):
-            if(self.coordinator.data[self.acx][self.zx]['value'] <= 20):
+        if(self.coordinator.data[self.acx]['zones'][self.zx]['state'] == "open"):
+            if(self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= 20):
                 return FAN_LOW
-            elif (self.coordinator.data[self.acx][self.zx]['value'] <= 60):
+            elif (self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= 60):
                 return FAN_MEDIUM
             else:
                 return FAN_HIGH
@@ -280,3 +280,39 @@ class MyAirZone(ClimateEntity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
+    async def async_added_to_hass(self):
+        """When entity is added to hass."""
+        self.async_on_remove(
+            self.coordinator.async_add_listener(
+                self.async_write_ha_state
+            )
+        )
+
+    async def async_set_hvac_mode(self, hvac_mode):
+        """Set the HVAC Mode and State"""
+        if(hvac_mode == HVAC_MODE_OFF):
+            await self.async_set_data({self.acx:{"info":{"state":"off"}}})
+        else:
+            await self.async_set_data({self.acx:{"info":{"state":"on", "mode": HASS_HVAC_MODES.get(hvac_mode)}}})
+
+        # Update the data
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_fan_mode(self, fan_mode):
+        """Set the Fan Mode"""
+        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": 50}}}})
+
+        # Update the data
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_temperature(self, **kwargs):
+        """Set the Temperature"""
+        temp = kwargs.get(ATTR_TEMPERATURE)
+        await self.async_set_data({self.acx:{"zones":{self.zx:{"setTemp":temp}}}})
+
+        # Update the data
+        await self.coordinator.async_request_refresh()
+
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
