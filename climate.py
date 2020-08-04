@@ -1,4 +1,3 @@
-from datetime import timedelta
 import logging
 import voluptuous as vol
 import json
@@ -15,7 +14,7 @@ from homeassistant.const import (
     CONF_PORT,
     TEMP_CELSIUS,
 )
-from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_COOL,
     CURRENT_HVAC_HEAT,
@@ -36,57 +35,20 @@ from homeassistant.components.climate.const import (
     SUPPORT_FAN_MODE,
 )
 
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
 _LOGGER = logging.getLogger(__name__)
-
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_HOST): cv.string,
-    vol.Optional(CONF_PORT, default='2025'): cv.string,
-})
 
 MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
 
 MYAIR_FAN_MODES = {"auto": FAN_AUTO, "low":FAN_LOW, "medium":FAN_MEDIUM, "high":FAN_HIGH}
 HASS_FAN_MODES = {v: k for k, v in MYAIR_FAN_MODES.items()}
+FAN_SPEEDS = {FAN_LOW: 30, FAN_MEDIUM: 60, FAN_HIGH: 100}
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the myair platform."""
-    host = config.get(CONF_HOST)
-    port = config.get(CONF_PORT,'2025')
-    session = async_get_clientsession(hass)
-
-    async def async_update_data():
-        try:
-            resp = await session.get(f"http://{host}:{port}/getSystemData")
-            #assert resp.status == 200
-            return (await resp.json())['aircons']
-        except Exception as err:
-            raise UpdateFailed(f"Error getting MyAir data: {err}")
-
-    async def async_set_data(data):
-        try:
-            resp = await session.get(f"http://{host}:{port}/setAircon", params={'json':json.dumps(data)})
-            return (await resp.json())
-        except Exception as err:
-            raise UpdateFailed(f"Error updating MyAir setting: {err} {data}")
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        # Name of the data. For logging purposes.
-        name="MyAir",
-        update_method=async_update_data,
-        # Polling interval. Will only be polled if there are subscribers.
-        update_interval=timedelta(seconds=30),
-    )
-
-    # Fetch initial data so we have data when entities subscribe
-    await coordinator.async_refresh()
+    """Set up MyAir climate platform."""
+    
+    coordinator = hass.data[DOMAIN]['coordinator']
+    async_set_data = hass.data[DOMAIN]['async_set_data']
 
     entities = []
     if(coordinator.data):
@@ -108,6 +70,10 @@ class MyAirAC(ClimateEntity):
     @property
     def name(self):
         return self.coordinator.data[self.acx]['info']['name']
+
+    @property
+    def unique_id(self):
+        return f"{self.acx}"
 
     @property
     def temperature_unit(self):
@@ -132,7 +98,7 @@ class MyAirAC(ClimateEntity):
     @property
     def hvac_mode(self):
         if(self.coordinator.data[self.acx]['info']['state'] == "on"):
-            return MYAIR_HVAC_MODES.get(self.coordinator.data[self.acx]['info']['mode'],HVAC_MODE_OFF)
+            return MYAIR_HVAC_MODES.get(self.coordinator.data[self.acx]['info']['mode'],self.coordinator.data[self.acx]['info']['mode'])
         else:
             return HVAC_MODE_OFF
 
@@ -151,6 +117,10 @@ class MyAirAC(ClimateEntity):
     @property
     def supported_features(self):
         return SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
+
+    @property
+    def device_state_attributes(self):
+        return self.coordinator.data[self.acx]['info']
 
     @property
     def should_poll(self):
@@ -210,6 +180,10 @@ class MyAirZone(ClimateEntity):
         return self.coordinator.data[self.acx]['zones'][self.zx]['name']
 
     @property
+    def unique_id(self):
+        return f"{self.acx}-{self.zx}"
+
+    @property
     def temperature_unit(self):
         return TEMP_CELSIUS
 
@@ -256,9 +230,9 @@ class MyAirZone(ClimateEntity):
     @property
     def fan_mode(self):
         if(self.coordinator.data[self.acx]['zones'][self.zx]['state'] == "open"):
-            if(self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= 20):
+            if(self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_LOW]+10)):
                 return FAN_LOW
-            elif (self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= 60):
+            elif (self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_MEDIUM]+10)):
                 return FAN_MEDIUM
             else:
                 return FAN_HIGH
@@ -267,11 +241,15 @@ class MyAirZone(ClimateEntity):
 
     @property
     def fan_modes(self):
-        return [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
+        return [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
+
+    @property
+    def device_state_attributes(self):
+        return self.coordinator.data[self.acx]['zones'][self.zx]
 
     @property
     def supported_features(self):
-        return SUPPORT_FAN_MODE
+        return SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
 
     @property
     def should_poll(self):
@@ -301,7 +279,10 @@ class MyAirZone(ClimateEntity):
 
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": 50}}}})
+        if(fan_mode == FAN_OFF):
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"close"}}}})
+        else:
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": FAN_SPEEDS[fan_mode]}}}})
 
         # Update the data
         await self.coordinator.async_request_refresh()

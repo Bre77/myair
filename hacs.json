@@ -1,0 +1,7 @@
+{
+    "name": "MyAir",
+    "content_in_root": true,
+    "render_readme": true,
+    "country": "AU",
+    "iot_class": "Local Polling"
+}
