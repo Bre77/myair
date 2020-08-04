@@ -1,0 +1,1 @@
+"""MyAir climate integration."""

@@ -1,0 +1,10 @@
+{
+    "domain": "myair",
+    "name": "MyAir",
+    "documentation": "https://myair.ba.id.au",
+    "issue_tracker": "https://github.com/Bre77/myair-ha/issues",
+    "dependencies": [],
+    "after_dependencies": [],
+    "codeowners": ["@Bre77"],
+    "requirements": []
+  }
