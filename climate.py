@@ -62,7 +62,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async def async_update_data():
         try:
-            resp = await session.get(f"http://{CONF_HOST}:{CONF_PORT}/getSystemData")
+            resp = await session.get(f"http://{host}:{port}/getSystemData")
             #assert resp.status == 200
             return (await resp.json())['aircons']
         except Exception as err:
@@ -70,7 +70,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async def async_set_data(data):
         try:
-            resp = await session.get(f"http://{CONF_HOST}:{CONF_PORT}/setAircon", params={'json':json.dumps(data)})
+            resp = await session.get(f"http://{host}:{port}/setAircon", params={'json':json.dumps(data)})
             return (await resp.json())
         except Exception as err:
             raise UpdateFailed(f"Error updating MyAir setting: {err} {data}")
