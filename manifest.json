@@ -1,8 +1,8 @@
 {
     "domain": "myair",
     "name": "MyAir",
-    "documentation": "https://myair.ba.id.au",
-    "issue_tracker": "https://github.com/Bre77/myair-ha/issues",
+    "documentation": "https://github.com/Bre77/myair",
+    "issue_tracker": "https://github.com/Bre77/myair/issues",
     "dependencies": [],
     "after_dependencies": [],
     "codeowners": ["@Bre77"],
