@@ -50,26 +50,29 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     coordinator = hass.data[DOMAIN]['coordinator']
     async_set_data = hass.data[DOMAIN]['async_set_data']
 
-    if(coordinator.data):
+    if('aircons' in coordinator.data):
         entities = []
-        for _, acx in enumerate(coordinator.data):
-            entities.append(MyAirAC(coordinator, async_set_data, acx))
-            for _, zx in enumerate(coordinator.data[acx]['zones']):
-                entities.append(MyAirZone(coordinator, async_set_data, acx, zx))
+        for _, acx in enumerate(coordinator.data['aircons']):
+            entities.append(MyAirAC(hass, acx))
+            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+                entities.append(MyAirZone(hass, acx, zx))
         async_add_entities(entities)
-             
+
+async def async_setup_entry(hass, config_entry, async_add_devices):
+           
 
 class MyAirAC(ClimateEntity):
     """MyAir AC unit"""
 
-    def __init__(self, coordinator, async_set_data, acx):
-        self.coordinator = coordinator
-        self.async_set_data = async_set_data
+    def __init__(self, hass, acx):
+        self.coordinator = hass.data[DOMAIN]['coordinator']
+        self.async_set_data = hass.data[DOMAIN]['async_set_data']
+        self.device = hass.data[DOMAIN]['device']
         self.acx = acx
 
     @property
     def name(self):
-        return self.coordinator.data[self.acx]['info']['name']
+        return self.coordinator.data['aircons'][self.acx]['info']['name']
 
     @property
     def unique_id(self):
@@ -81,7 +84,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def target_temperature(self):
-        return self.coordinator.data[self.acx]['info']['setTemp']
+        return self.coordinator.data['aircons'][self.acx]['info']['setTemp']
 
     @property
     def target_temperature_step(self):
@@ -97,8 +100,8 @@ class MyAirAC(ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if(self.coordinator.data[self.acx]['info']['state'] == "on"):
-            return MYAIR_HVAC_MODES.get(self.coordinator.data[self.acx]['info']['mode'],self.coordinator.data[self.acx]['info']['mode'])
+        if(self.coordinator.data['aircons'][self.acx]['info']['state'] == "on"):
+            return MYAIR_HVAC_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['mode'],self.coordinator.data['aircons'][self.acx]['info']['mode'])
         else:
             return HVAC_MODE_OFF
 
@@ -108,7 +111,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def fan_mode(self):
-        return MYAIR_FAN_MODES.get(self.coordinator.data[self.acx]['info']['fan'],FAN_OFF)
+        return MYAIR_FAN_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['fan'],FAN_OFF)
     
     @property
     def fan_modes(self):
@@ -120,7 +123,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def device_state_attributes(self):
-        return self.coordinator.data[self.acx]['info']
+        return self.coordinator.data['aircons'][self.acx]['info']
 
     @property
     def should_poll(self):
@@ -129,6 +132,10 @@ class MyAirAC(ClimateEntity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
+    @property
+    def device_info(self):
+        return self.device
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""
@@ -169,15 +176,16 @@ class MyAirAC(ClimateEntity):
 
 class MyAirZone(ClimateEntity):
 
-    def __init__(self, coordinator, async_set_data, acx, zx):
-        self.coordinator = coordinator
-        self.async_set_data = async_set_data
+    def __init__(self, hass, acx, zx):
+        self.coordinator = hass.data[DOMAIN]['coordinator']
+        self.async_set_data = hass.data[DOMAIN]['async_set_data']
+        self.device = hass.data[DOMAIN]['device']
         self.acx = acx
         self.zx = zx
 
     @property
     def name(self):
-        return self.coordinator.data[self.acx]['zones'][self.zx]['name']
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']
 
     @property
     def unique_id(self):
@@ -189,41 +197,41 @@ class MyAirZone(ClimateEntity):
 
     @property
     def current_temperature(self):
-        return self.coordinator.data[self.acx]['zones'][self.zx]['measuredTemp']
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['measuredTemp']
 
     @property
     def target_temperature(self):
-        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
         #    raise NotImplementedError
         #else:
-        return self.coordinator.data[self.acx]['zones'][self.zx]['setTemp']
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['setTemp']
             
 
     @property
     def target_temperature_step(self):
-        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
         #    raise NotImplementedError
         #else:
         return 1
 
     @property
     def max_temp(self):
-        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
         #    raise NotImplementedError
         #else:
         return 32
 
     @property
     def min_temp(self):
-        #if(self.coordinator.data[self.acx]['info']['myZone'] == 0):
+        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
         #    raise NotImplementedError
         #else:
         return 16
 
     @property
     def hvac_mode(self):
-        if(self.coordinator.data[self.acx]['info']['state'] == "on"):
-            return MYAIR_HVAC_MODES.get(self.coordinator.data[self.acx]['info']['mode'],HVAC_MODE_OFF)
+        if(self.coordinator.data['aircons'][self.acx]['info']['state'] == "on"):
+            return MYAIR_HVAC_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['mode'],HVAC_MODE_OFF)
         else:
             return HVAC_MODE_OFF
 
@@ -233,10 +241,10 @@ class MyAirZone(ClimateEntity):
 
     @property
     def fan_mode(self):
-        if(self.coordinator.data[self.acx]['zones'][self.zx]['state'] == "open"):
-            if(self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_LOW]+10)):
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == "open"):
+            if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_LOW]+10)):
                 return FAN_LOW
-            elif (self.coordinator.data[self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_MEDIUM]+10)):
+            elif (self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_MEDIUM]+10)):
                 return FAN_MEDIUM
             else:
                 return FAN_HIGH
@@ -249,7 +257,7 @@ class MyAirZone(ClimateEntity):
 
     @property
     def device_state_attributes(self):
-        return self.coordinator.data[self.acx]['zones'][self.zx]
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]
 
     @property
     def supported_features(self):
@@ -262,6 +270,10 @@ class MyAirZone(ClimateEntity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
+    @property
+    def device_info(self):
+        return self.device
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""

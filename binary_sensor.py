@@ -9,25 +9,26 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     
     coordinator = hass.data[DOMAIN]['coordinator']
 
-    if(coordinator.data):
+    if('aircons' in coordinator.data):
         entities = []
-        for _, acx in enumerate(coordinator.data):
-            for _, zx in enumerate(coordinator.data[acx]['zones']):
-                if('motion' in coordinator.data[acx]['zones'][zx]):
-                    entities.append(MyAirZoneMotion(coordinator, acx, zx))
+        for _, acx in enumerate(coordinator.data['aircons']):
+            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+                if('motion' in coordinator.data['aircons'][acx]['zones'][zx]):
+                    entities.append(MyAirZoneMotion(hass, acx, zx))
         async_add_entities(entities)
              
 
 class MyAirZoneMotion(BinarySensorEntity):
 
-    def __init__(self, coordinator, acx, zx):
-        self.coordinator = coordinator
+    def __init__(self, hass, acx, zx):
+        self.coordinator = hass.data[DOMAIN]['coordinator']
+        self.device = hass.data[DOMAIN]['device']
         self.acx = acx
         self.zx = zx
 
     @property
     def name(self):
-        return f"{self.coordinator.data[self.acx]['zones'][self.zx]['name']} Motion"
+        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Motion"
 
     @property
     def unique_id(self):
@@ -39,11 +40,11 @@ class MyAirZoneMotion(BinarySensorEntity):
 
     @property
     def is_on(self):
-        return self.coordinator.data[self.acx]['zones'][self.zx]['motion']
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['motion']
 
     @property
     def device_state_attributes(self):
-        return {'motionConfig': self.coordinator.data[self.acx]['zones'][self.zx]['motionConfig']}
+        return {'motionConfig': self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['motionConfig']}
 
     @property
     def should_poll(self):
@@ -52,6 +53,10 @@ class MyAirZoneMotion(BinarySensorEntity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
+    @property
+    def device_info(self):
+        return self.device
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""
