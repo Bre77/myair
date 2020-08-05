@@ -2,6 +2,7 @@
     "name": "MyAir",
     "content_in_root": true,
     "render_readme": true,
+    "domains": ["climate","binary_sensor","sensor"],
     "country": "AU",
     "iot_class": "Local Polling"
 }
