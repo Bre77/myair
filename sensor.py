@@ -16,7 +16,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
                     entities.append(MyAirZoneVent(hass, acx, zx))
                 if('rssi' in coordinator.data['aircons'][acx]['zones'][zx]):
-                    entities.append(MyAirZoneWifi(hass, acx, zx))
+                    entities.append(MyAirZoneSignal(hass, acx, zx))
         async_add_entities(entities)
              
 
@@ -48,6 +48,10 @@ class MyAirZoneVent(Entity):
         return "%"
 
     @property
+    def icon(self):
+        return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'open']
+
+    @property
     def should_poll(self):
         return False
 
@@ -70,7 +74,7 @@ class MyAirZoneVent(Entity):
     async def async_update(self):
         await self.coordinator.async_request_refresh()
 
-class MyAirZoneWifi(Entity):
+class MyAirZoneSignal(Entity):
 
     def __init__(self, hass, acx, zx):
         self.coordinator = hass.data[DOMAIN]['coordinator']
@@ -80,11 +84,11 @@ class MyAirZoneWifi(Entity):
 
     @property
     def name(self):
-        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} WiFi"
+        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Signal"
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}-wifi"
+        return f"{self.acx}-{self.zx}-signal"
 
     @property
     def state(self):
@@ -93,6 +97,19 @@ class MyAirZoneWifi(Entity):
     @property
     def unit_of_measurement(self):
         return "%"
+
+    @property
+    def icon(self):
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['rssi'] >= 80):
+            return "mdi:wifi-strength-4"
+        elif(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['rssi'] >= 60):
+            return "mdi:wifi-strength-3"
+        elif(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['rssi'] >= 40):
+            return "mdi:wifi-strength-2"
+        elif(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['rssi'] >= 20):
+            return "mdi:wifi-strength-1"
+        else:
+            return "mdi:wifi-strength-outline"
 
     @property
     def should_poll(self):
