@@ -1,6 +1,6 @@
-import logging
-import voluptuous as vol
-import json
+#import logging
+#import voluptuous as vol
+#import json
 
 from .const import (
     DOMAIN,
@@ -35,7 +35,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_FAN_MODE,
 )
 
-_LOGGER = logging.getLogger(__name__)
+#_LOGGER = logging.getLogger(__name__)
 
 MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
@@ -50,13 +50,13 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     coordinator = hass.data[DOMAIN]['coordinator']
     async_set_data = hass.data[DOMAIN]['async_set_data']
 
-    entities = []
     if(coordinator.data):
+        entities = []
         for _, acx in enumerate(coordinator.data):
             entities.append(MyAirAC(coordinator, async_set_data, acx))
             for _, zx in enumerate(coordinator.data[acx]['zones']):
                 entities.append(MyAirZone(coordinator, async_set_data, acx, zx))
-    async_add_entities(entities)
+        async_add_entities(entities)
              
 
 class MyAirAC(ClimateEntity):
@@ -186,6 +186,10 @@ class MyAirZone(ClimateEntity):
     @property
     def temperature_unit(self):
         return TEMP_CELSIUS
+
+    @property
+    def current_temperature(self):
+        return self.coordinator.data[self.acx]['zones'][self.zx]['measuredTemp']
 
     @property
     def target_temperature(self):

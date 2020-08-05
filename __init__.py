@@ -15,29 +15,46 @@ from homeassistant.const import (
     TEMP_CELSIUS,
     CONF_HOST,
     CONF_PORT,
+    CONF_SSL,
     TEMP_CELSIUS,
 )
 
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_HOST): cv.string,
-    vol.Optional(CONF_PORT, default='2025'): cv.string,
-})
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_HOST): cv.string,
+                vol.Optional(CONF_PORT, default='2025'): cv.string,
+                vol.Optional(CONF_SSL, default=False): cv.boolean,
+                vol.Optional('zones', default=True): cv.boolean,
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up MyAir."""
     
-    host = config.get(CONF_HOST)
-    port = config.get(CONF_PORT,'2025')
+    host = config[DOMAIN].get(CONF_HOST)
+    port = config[DOMAIN].get(CONF_PORT)
+    ssl = config[DOMAIN].get(CONF_SSL)
     session = async_get_clientsession(hass)
+
+    if ssl:
+        uri_scheme = "https://"
+    else:
+        uri_scheme = "http://"
 
     async def async_update_data():
         try:
-            resp = await session.get(f"http://{host}:{port}/getSystemData")
+            resp = await session.get(f"{uri_scheme}{host}:{port}/getSystemData")
             #assert resp.status == 200
             return (await resp.json())['aircons']
         except Exception as err:
@@ -45,29 +62,29 @@ async def async_setup(hass, config):
 
     async def async_set_data(data):
         try:
-            resp = await session.get(f"http://{host}:{port}/setAircon", params={'json':json.dumps(data)}) 
+            resp = await session.get(f"{uri_scheme}{host}:{port}/setAircon", params={'json':json.dumps(data)}) 
             return (await resp.json())
         except Exception as err:
-            raise UpdateFailed(f"Error updating MyAir setting: {err} {data}")
+            raise UpdateFailed(f"Error updating MyAir setting: {err}")
 
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        # Name of the data. For logging purposes.
         name="MyAir",
         update_method=async_update_data,
-        # Polling interval. Will only be polled if there are subscribers.
         update_interval=timedelta(seconds=30),
     )
 
     # Fetch initial data so we have data when entities subscribe
-    await coordinator.async_refresh()
-
+    
     hass.data[DOMAIN] = {
         'coordinator': coordinator,
         'async_set_data': async_set_data,
     }
 
-    await hass.helpers.discovery.async_load_platform ('climate', DOMAIN, {}, config)
+    await coordinator.async_refresh()
+    await hass.helpers.discovery.async_load_platform('climate', DOMAIN, {}, config)
+    await hass.helpers.discovery.async_load_platform('binary_sensor', DOMAIN, {}, config)
+    await hass.helpers.discovery.async_load_platform('sensor', DOMAIN, {}, config)
 
     return True
