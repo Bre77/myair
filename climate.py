@@ -55,7 +55,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             entities.append(MyAirAC(hass, acx))
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
                 entities.append(MyAirZone(hass, acx, zx))
-        async_add_entities(entities)             
+        await async_add_entities(entities)
+    return True            
 
 class MyAirAC(ClimateEntity):
     """MyAir AC unit"""

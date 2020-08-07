@@ -15,7 +15,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
                 if('motion' in coordinator.data['aircons'][acx]['zones'][zx]):
                     entities.append(MyAirZoneMotion(hass, acx, zx))
-        async_add_entities(entities)
+        await async_add_entities(entities)
+    return True
              
 
 class MyAirZoneMotion(BinarySensorEntity):

@@ -17,7 +17,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                     entities.append(MyAirZoneVent(hass, acx, zx))
                 if('rssi' in coordinator.data['aircons'][acx]['zones'][zx]):
                     entities.append(MyAirZoneSignal(hass, acx, zx))
-        async_add_entities(entities)
+        await async_add_entities(entities)
+    return True
              
 
 class MyAirZoneVent(Entity):
