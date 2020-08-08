@@ -1,6 +1,6 @@
 {
     "name": "MyAir",
-    "content_in_root": true,
+    "content_in_root": false,
     "render_readme": true,
     "domains": ["climate","binary_sensor","sensor"],
     "country": "AU",
