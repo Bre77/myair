@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 import logging
+import asyncio
 import voluptuous as vol
 import json
 
@@ -16,13 +17,11 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_PORT,
     CONF_SSL,
-    TEMP_CELSIUS,
 )
 
-from homeassistant.helpers import config_validation, device_registry
+from homeassistant.helpers import config_validation, device_registry, collection, entity_component
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -43,6 +42,8 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass, config):
     """Set up MyAir."""
     
+    _LOGGER.debug("Setting up MyAir")
+
     host = config[DOMAIN].get(CONF_HOST)
     port = config[DOMAIN].get(CONF_PORT)
     ssl = config[DOMAIN].get(CONF_SSL)
@@ -57,14 +58,14 @@ async def async_setup(hass, config):
         try:
             resp = await session.get(f"{uri_scheme}{host}:{port}/getSystemData")
             #assert resp.status == 200
-            return (await resp.json())
+            return await resp.json()
         except Exception as err:
             raise UpdateFailed(f"Error getting MyAir data: {err}")
 
     async def async_set_data(data):
         try:
             resp = await session.get(f"{uri_scheme}{host}:{port}/setAircon", params={'json':json.dumps(data)}) 
-            return (await resp.json())
+            return await resp.json()
         except Exception as err:
             raise UpdateFailed(f"Error setting MyAir data: {err}")
 
@@ -93,8 +94,30 @@ async def async_setup(hass, config):
         'device': device,
     }
     
-    await hass.helpers.discovery.async_load_platform('climate', DOMAIN, {}, config)
-    await hass.helpers.discovery.async_load_platform('binary_sensor', DOMAIN, {}, config)
-    await hass.helpers.discovery.async_load_platform('sensor', DOMAIN, {}, config)
+    # Load Platforms
+    hass.async_create_task(
+        hass.helpers.discovery.async_load_platform('climate', DOMAIN, {}, config)
+    )
+    hass.async_create_task(
+        hass.helpers.discovery.async_load_platform('binary_sensor', DOMAIN, {}, config)
+    )
+    hass.async_create_task(
+        hass.helpers.discovery.async_load_platform('sensor', DOMAIN, {}, config)
+    )
+    hass.async_create_task(
+        hass.helpers.discovery.async_load_platform('cover', DOMAIN, {}, config)
+    )
+
+    _LOGGER.warn("Setup Input Number platform")
+
+    #if('aircons' in coordinator.data):
+    #    entities = []
+    #    for _, acx in enumerate(coordinator.data['aircons']):
+    #        for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+    #            if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
+    #                _LOGGER.info("Setup Input Number class")
+    #                entities.append(MyAirZoneVentInputNumber(hass, acx, zx))
+    #    async_add_entities(entities)
+    #return True
 
     return True

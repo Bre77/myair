@@ -1,9 +1,0 @@
-set_vent:
-    description: Sets the percentage a zone vent is open.
-    fields:
-      entity_id:
-        description: Name(s) of the entities to set
-        example: "climate.living_room"
-      open:
-        description: Percentage open
-        example: "50"

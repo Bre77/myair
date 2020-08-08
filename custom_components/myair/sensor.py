@@ -13,8 +13,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         entities = []
         for _, acx in enumerate(coordinator.data['aircons']):
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-                if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
-                    entities.append(MyAirZoneVent(hass, acx, zx))
+                #if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
+                #    entities.append(MyAirZoneVent(hass, acx, zx))
                 if('rssi' in coordinator.data['aircons'][acx]['zones'][zx]):
                     entities.append(MyAirZoneSignal(hass, acx, zx))
         async_add_entities(entities)
