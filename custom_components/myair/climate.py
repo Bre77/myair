@@ -69,7 +69,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def name(self):
-        return self.coordinator.data['aircons'][self.acx]['info']['name']
+        return f"{self.coordinator.data['aircons'][self.acx]['info']['name']}"
 
     @property
     def unique_id(self):
@@ -182,7 +182,7 @@ class MyAirZone(ClimateEntity):
 
     @property
     def name(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']
+        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']}"
 
     @property
     def unique_id(self):
