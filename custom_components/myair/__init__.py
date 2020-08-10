@@ -2,40 +2,21 @@
 
 from datetime import timedelta
 import logging
-import asyncio
-import voluptuous as vol
 import json
 
-from .const import (
-    DOMAIN,
-)
+from .const import *
 
 from homeassistant.const import (
-    ATTR_NAME,
-    ATTR_TEMPERATURE,
-    TEMP_CELSIUS,
     CONF_HOST,
     CONF_PORT,
     CONF_SSL,
 )
 
-from homeassistant.helpers import config_validation, device_registry, collection, entity_component
+from homeassistant.helpers import device_registry, collection, entity_component
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_HOST): config_validation.string,
-                vol.Optional(CONF_PORT, default='2025'): config_validation.port,
-                vol.Optional(CONF_SSL, default=False): config_validation.boolean,
-                vol.Optional('zones', default=True): config_validation.boolean,
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+CONFIG_SCHEMA = MYAIR_YAML_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,9 +25,13 @@ async def async_setup(hass, config):
     
     _LOGGER.debug("Setting up MyAir")
 
-    host = config[DOMAIN].get(CONF_HOST)
-    port = config[DOMAIN].get(CONF_PORT)
-    ssl = config[DOMAIN].get(CONF_SSL)
+    return True
+
+async def async_setup_entry(hass, config_entry):
+    #config[DOMAIN]
+    host = config_entry.get(CONF_HOST)
+    port = config_entry.get(CONF_PORT)
+    ssl = config_entry.get(CONF_SSL)
     session = async_get_clientsession(hass)
 
     if ssl:
@@ -95,18 +80,10 @@ async def async_setup(hass, config):
     }
     
     # Load Platforms
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform('climate', DOMAIN, {}, config)
-    )
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform('binary_sensor', DOMAIN, {}, config)
-    )
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform('sensor', DOMAIN, {}, config)
-    )
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform('cover', DOMAIN, {}, config)
-    )
+    for platform in MYAIR_PLATFORMS:
+        hass.async_create_task(
+            hass.helpers.discovery.async_load_platform(platform, DOMAIN, {}, config_entry)
+        )
 
     _LOGGER.warn("Setup Input Number platform")
 
