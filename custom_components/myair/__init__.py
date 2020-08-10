@@ -58,14 +58,14 @@ async def async_setup(hass, config):
         try:
             resp = await session.get(f"{uri_scheme}{host}:{port}/getSystemData")
             #assert resp.status == 200
-            return await resp.json()
+            return await resp.json(content_type=None)
         except Exception as err:
             raise UpdateFailed(f"Error getting MyAir data: {err}")
 
     async def async_set_data(data):
         try:
             resp = await session.get(f"{uri_scheme}{host}:{port}/setAircon", params={'json':json.dumps(data)}) 
-            return await resp.json()
+            return await resp.json(content_type=None)
         except Exception as err:
             raise UpdateFailed(f"Error setting MyAir data: {err}")
 
@@ -107,17 +107,5 @@ async def async_setup(hass, config):
     hass.async_create_task(
         hass.helpers.discovery.async_load_platform('cover', DOMAIN, {}, config)
     )
-
-    _LOGGER.warn("Setup Input Number platform")
-
-    #if('aircons' in coordinator.data):
-    #    entities = []
-    #    for _, acx in enumerate(coordinator.data['aircons']):
-    #        for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-    #            if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
-    #                _LOGGER.info("Setup Input Number class")
-    #                entities.append(MyAirZoneVentInputNumber(hass, acx, zx))
-    #    async_add_entities(entities)
-    #return True
 
     return True
