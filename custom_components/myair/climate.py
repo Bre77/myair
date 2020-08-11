@@ -1,18 +1,10 @@
-#import logging
-#import voluptuous as vol
-#import json
-
-from .const import (
-    DOMAIN,
-)
+from .const import DOMAIN
 
 from homeassistant.const import (
-    ATTR_NAME,
     ATTR_TEMPERATURE,
     TEMP_CELSIUS,
     CONF_HOST,
     CONF_PORT,
-    TEMP_CELSIUS,
 )
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -35,8 +27,6 @@ from homeassistant.components.climate.const import (
     SUPPORT_FAN_MODE,
 )
 
-#_LOGGER = logging.getLogger(__name__)
-
 MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
 
@@ -54,7 +44,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         for _, acx in enumerate(coordinator.data['aircons']):
             entities.append(MyAirAC(hass, acx))
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-                if(coordinator.data['aircons'][acx]['zones'].get('measuredTemp',0) != 0):
+                # Only add zone climate control when zone is in temperature control
+                if(coordinator.data['aircons'][acx]['zones']['type'] != 0):
                     entities.append(MyAirZone(hass, acx, zx))
         async_add_entities(entities)
     return True            
