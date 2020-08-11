@@ -40,7 +40,7 @@ from homeassistant.components.climate.const import (
 MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
 
-MYAIR_FAN_MODES = {"auto": FAN_AUTO, "low":FAN_LOW, "medium":FAN_MEDIUM, "high":FAN_HIGH}
+MYAIR_FAN_MODES = {"auto":FAN_AUTO, "low":FAN_LOW, "medium":FAN_MEDIUM, "high":FAN_HIGH}
 HASS_FAN_MODES = {v: k for k, v in MYAIR_FAN_MODES.items()}
 FAN_SPEEDS = {FAN_LOW: 30, FAN_MEDIUM: 60, FAN_HIGH: 100}
 
