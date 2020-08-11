@@ -1,12 +1,9 @@
 import logging
-import json
-from datetime import timedelta
-from aiohttp import ClientError
+from aiohttp import request, ClientError
 
 from .const import *
 from homeassistant import config_entries
 from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,23 +21,26 @@ class MyAirConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         host = info.get(CONF_HOST)
         port = info.get(CONF_PORT)
         ssl = info.get(CONF_SSL)
-        session = async_get_clientsession(self.hass)
 
         if ssl:
             url = f"https://{host}:{port}"
         else:
             url = f"http://{host}:{port}"
 
-
-        _LOGGER.info(f"Connecting to {url}/getSystemData")
         try:
-            await session.get(f"{url}/getSystemData")
-        except ClientError as error:
-            _LOGGER.error(f"Unable to connect to MyAir: {error}")
+            async with request('GET', f"{url}/getSystemData") as resp:
+                assert resp.status == 200
+                data = await resp.json(content_type=None)
+        except ClientError as err:
+            _LOGGER.error(f"Unable to connect to MyAir: {err}")
+            return self._show_form({"base": "connection_error"})
+
+        data = resp.json(content_type=None)
+        if('aircons' not in data):
             return self._show_form({"base": "connection_error"})
 
         return self.async_create_entry(
-            title=info[CONF_HOST],
+            title=data['system']['name'],
             data=info,
         )
 
