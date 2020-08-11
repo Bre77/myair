@@ -35,7 +35,6 @@ class MyAirConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.error(f"Unable to connect to MyAir: {err}")
             return self._show_form({"base": "connection_error"})
 
-        data = resp.json(content_type=None)
         if('aircons' not in data):
             return self._show_form({"base": "connection_error"})
 
