@@ -1,6 +1,4 @@
-from .const import (
-    DOMAIN,
-)
+from .const import DOMAIN
 
 from homeassistant.components.binary_sensor import BinarySensorEntity, DEVICE_CLASS_MOTION
 
@@ -13,7 +11,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         entities = []
         for _, acx in enumerate(coordinator.data['aircons']):
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-                if('motion' in coordinator.data['aircons'][acx]['zones'][zx]):
+                # Only add motion sensor when motion is enabled
+                if(coordinator.data['aircons'][acx]['zones'][zx]['motionConfig'] == 0):
                     entities.append(MyAirZoneMotion(hass, acx, zx))
         async_add_entities(entities)
     return True

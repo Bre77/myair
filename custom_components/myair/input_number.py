@@ -1,8 +1,6 @@
 import logging
 
-from .const import (
-    DOMAIN,
-)
+from .const import *
 
 from homeassistant.const import (
     ATTR_NAME,

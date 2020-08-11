@@ -1,9 +1,10 @@
 """MyAir climate integration."""
 
-from datetime import timedelta
 import logging
 import json
 import asyncio
+from datetime import timedelta
+from aiohttp import request, ClientError, ClientTimeout
 
 from .const import *
 
@@ -16,39 +17,24 @@ from homeassistant.const import (
 from homeassistant.helpers import device_registry, collection, entity_component
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from aiohttp import request, ClientError
-
-CONFIG_SCHEMA = MYAIR_YAML_SCHEMA
-
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up MyAir."""
-    
-    _LOGGER.debug("Setting up MyAir")
-
     return True
 
 async def async_setup_entry(hass, config_entry):
-    #config[DOMAIN]
-    host = config_entry.data.get(CONF_HOST)
-    port = config_entry.data.get(CONF_PORT)
-    ssl = config_entry.data.get(CONF_SSL)
-
-    if ssl:
-        url = f"https://{host}:{port}"
-    else:
-        url = f"http://{host}:{port}"
+    """Set up MyAir Config."""
+    url = config_entry.data.get('url')
 
     async def async_update_data():
         data = {}
         count = 0
         while True:      
             try:
-                async with request('GET', f"{url}/getSystemData") as resp:
+                async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
-                #resp = await request.get() 
             except ConnectionResetError:
                 continue
             except ClientError as err:
@@ -58,15 +44,15 @@ async def async_setup_entry(hass, config_entry):
                 return data
 
             if(count > 5):
-                raise UpdateFailed(f"Tried too many times to get MyAir data") 
+                raise UpdateFailed("Tried too many times to get MyAir data") 
             else:
                 count+=1
-                _LOGGER.warn(f"Waiting a second and then retrying, Try: {count}")
+                _LOGGER.debug(f"Waiting a second and then retrying, Try: {count}")
                 await asyncio.sleep(1)
 
     async def async_set_data(change):
         try:
-            async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}) as resp:
+            async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}, timeout=ClientTimeout(total=5)) as resp:
                 assert resp.status == 200
                 data = await resp.json(content_type=None)
         except ClientError as err:
@@ -91,10 +77,7 @@ async def async_setup_entry(hass, config_entry):
 
     if('system' in coordinator.data):
         device = {
-            "identifiers": {(
-                DOMAIN,
-                coordinator.data['system'].get('rid',"0")
-            )},
+            "identifiers": {(DOMAIN,coordinator.data['system'].get('rid',"0"))},
             "name": coordinator.data['system'].get('name'),
             "manufacturer": "Advantage Air",
             "model": coordinator.data['system'].get('sysType'),

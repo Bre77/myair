@@ -1,4 +1,4 @@
-from .const import *
+from .const import DOMAIN, MYAIR_ZONE_OPEN, MYAIR_ZONE_CLOSE
 
 from homeassistant.const import (
     STATE_OPEN,
@@ -23,7 +23,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         entities = []
         for _, acx in enumerate(coordinator.data['aircons']):
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-                if('value' in coordinator.data['aircons'][acx]['zones'][zx]):
+                # Only add zone damper controls when zone in damper control.
+                if(coordinator.data['aircons'][acx]['zones'][zx]['type'] == 0):
                     entities.append(MyAirZoneDamper(hass, acx, zx))
         async_add_entities(entities)
     return True
