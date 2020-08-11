@@ -4,7 +4,7 @@ import logging
 import json
 import asyncio
 from datetime import timedelta
-from aiohttp import request, ClientError
+from aiohttp import request, ClientError, ClientTimeout
 
 from .const import *
 
@@ -19,8 +19,12 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_setup(hass, config):
+    """Set up MyAir."""
+    return True
+
 async def async_setup_entry(hass, config_entry):
-    #config[DOMAIN]
+    """Set up MyAir Config."""
     url = config_entry.data.get('url')
 
     async def async_update_data():
@@ -28,7 +32,7 @@ async def async_setup_entry(hass, config_entry):
         count = 0
         while True:      
             try:
-                async with request('GET', f"{url}/getSystemData") as resp:
+                async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
             except ConnectionResetError:
@@ -48,7 +52,7 @@ async def async_setup_entry(hass, config_entry):
 
     async def async_set_data(change):
         try:
-            async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}) as resp:
+            async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}, timeout=ClientTimeout(total=5)) as resp:
                 assert resp.status == 200
                 data = await resp.json(content_type=None)
         except ClientError as err:

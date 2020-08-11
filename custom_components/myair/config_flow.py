@@ -1,5 +1,5 @@
 import logging
-from aiohttp import request, ClientError
+from aiohttp import request, ClientError, ClientTimeout, ServerTimeoutError
 
 from .const import DOMAIN
 from homeassistant import config_entries
@@ -27,9 +27,12 @@ class MyAirConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         url = info.get(CONF_URL)
 
         try:
-            async with request('GET', f"{url}/getSystemData") as resp:
+            async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
                 assert resp.status == 200
                 data = await resp.json(content_type=None)
+        except ServerTimeoutError as err:
+            _LOGGER.error(f"Connection timed out: {err}")
+            return self._show_form({"base": "timeout_error"})
         except ClientError as err:
             _LOGGER.error(f"Unable to connect to MyAir: {err}")
             return self._show_form({"base": "connection_error"})

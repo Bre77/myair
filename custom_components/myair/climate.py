@@ -45,7 +45,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             entities.append(MyAirAC(hass, acx))
             for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
                 # Only add zone climate control when zone is in temperature control
-                if(coordinator.data['aircons'][acx]['zones']['type'] != 0):
+                if(coordinator.data['aircons'][acx]['zones'][zx]['type'] != 0):
                     entities.append(MyAirZone(hass, acx, zx))
         async_add_entities(entities)
     return True            
