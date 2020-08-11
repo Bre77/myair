@@ -1,6 +1,4 @@
-from .const import (
-    DOMAIN,
-)
+from .const import *
 
 from homeassistant.helpers.entity import Entity
 
@@ -39,7 +37,7 @@ class MyAirZoneVent(Entity):
 
     @property
     def state(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'open'):
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
             return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value']
         else:
             return 0
@@ -50,7 +48,7 @@ class MyAirZoneVent(Entity):
 
     @property
     def icon(self):
-        return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'open']
+        return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN]
 
     @property
     def should_poll(self):

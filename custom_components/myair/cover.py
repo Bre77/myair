@@ -1,6 +1,4 @@
-from .const import (
-    DOMAIN,
-)
+from .const import *
 
 from homeassistant.const import (
     STATE_OPEN,
@@ -42,7 +40,7 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def name(self):
-        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Vent"
+        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Duct"
 
     @property
     def unique_id(self):
@@ -58,7 +56,7 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def is_closed(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'close'
+        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_CLOSE
 
     @property
     def is_opening(self):
@@ -70,14 +68,14 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def current_cover_position(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'open'):
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
             return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value']
         else:
             return 0
 
-    #@property
-    #def icon(self):
-    #    return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == 'open']
+    @property
+    def icon(self):
+        return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN]
 
     @property
     def should_poll(self):
@@ -92,19 +90,19 @@ class MyAirZoneDamper(CoverEntity):
         return self.device
 
     async def async_open_cover(self, **kwargs):
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": 100}}}})
+        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": 100}}}})
         await self.coordinator.async_request_refresh()
 
     async def async_close_cover(self, **kwargs):
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"close"}}}})
+        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs):
         position = round(kwargs.get(ATTR_POSITION)/5)*5
         if(position == 0):
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"close"}}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
         else:
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": position}}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": position}}}})
 
         await self.coordinator.async_request_refresh()
 
