@@ -53,8 +53,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         entities = []
         for _, acx in enumerate(coordinator.data['aircons']):
             entities.append(MyAirAC(hass, acx))
-            #for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-            #    entities.append(MyAirZone(hass, acx, zx))
+            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+                if(coordinator.data['aircons'][acx]['zones'].get('measuredTemp',0) != 0):
+                    entities.append(MyAirZone(hass, acx, zx))
         async_add_entities(entities)
     return True            
 
