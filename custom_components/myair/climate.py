@@ -35,7 +35,7 @@ HASS_FAN_MODES = {v: k for k, v in MYAIR_FAN_MODES.items()}
 FAN_SPEEDS = {FAN_LOW: 30, FAN_MEDIUM: 60, FAN_HIGH: 100}
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    pass
+    return True
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir climate platform."""

@@ -15,7 +15,7 @@ from homeassistant.components.cover import (
 )
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    pass
+    return True
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir cover platform."""
@@ -30,6 +30,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 if(my.coordinator.data['aircons'][acx]['zones'][zx]['type'] == 0):
                     entities.append(MyAirZoneDamper(my, acx, zx))
         async_add_entities(entities)
+    return True
+
              
 
 class MyAirZoneDamper(CoverEntity):

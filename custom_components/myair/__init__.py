@@ -21,10 +21,12 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up MyAir."""
+    hass.data[DOMAIN] = {}
     for platform in MYAIR_PLATFORMS:
         hass.async_create_task(
             hass.helpers.discovery.async_load_platform(platform, DOMAIN, {}, config)
         )
+    return True
 
 async def async_setup_entry(hass, config_entry):
     """Set up MyAir Config."""
@@ -33,25 +35,23 @@ async def async_setup_entry(hass, config_entry):
     async def async_update_data():
         data = {}
         count = 0
-        while True:      
+        while count < MYAIR_RETRY:      
             try:
                 async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
-            except ConnectionResetError:
-                continue
+            #except ConnectionResetError:
+            #    continue
             except ClientError as err:
                 raise UpdateFailed(err)
 
             if('aircons' in data):
                 return data
 
-            if(count > 5):
-                raise UpdateFailed("Tried too many times to get MyAir data") 
-            else:
-                count+=1
-                _LOGGER.debug(f"Waiting a second and then retrying, Try: {count}")
-                await asyncio.sleep(1)
+            count+=1
+            _LOGGER.debug(f"Waiting a second and then retrying, Try: {count}")
+            await asyncio.sleep(1)
+        raise UpdateFailed(f"Tried {MYAIR_RETRY} times to get MyAir data") 
 
     async def async_set_data(change):
         try:
@@ -100,3 +100,5 @@ async def async_setup_entry(hass, config_entry):
         hass.config_entries.async_forward_entry_setup(
             config_entry, platform
         )
+    
+    return True

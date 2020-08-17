@@ -3,7 +3,7 @@ from .const import DOMAIN
 from homeassistant.components.binary_sensor import BinarySensorEntity, DEVICE_CLASS_MOTION
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    pass
+    return True
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir motion platform."""

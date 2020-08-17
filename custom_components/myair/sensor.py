@@ -3,7 +3,7 @@ from .const import DOMAIN, MYAIR_ZONE_OPEN, MYAIR_ZONE_CLOSE
 from homeassistant.helpers.entity import Entity
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    pass
+    return True
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir sensor platform."""
@@ -20,7 +20,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 # Only show wireless signal strength sensors when using wireless sensors
                 if(my.coordinator.data['aircons'][acx]['zones'][zx]['rssi'] > 0):
                     entities.append(MyAirZoneSignal(my, acx, zx))
-        async_add_entities(entities)             
+        async_add_entities(entities)   
+    return True
+         
 
 class MyAirZoneVent(Entity):
 
