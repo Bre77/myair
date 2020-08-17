@@ -21,7 +21,10 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Set up MyAir."""
-    return True
+    for platform in MYAIR_PLATFORMS:
+        hass.async_create_task(
+            hass.helpers.discovery.async_load_platform(platform, DOMAIN, {}, config)
+        )
 
 async def async_setup_entry(hass, config_entry):
     """Set up MyAir Config."""
@@ -69,7 +72,7 @@ async def async_setup_entry(hass, config_entry):
         _LOGGER,
         name="MyAir",
         update_method=async_update_data,
-        update_interval=timedelta(seconds=30),
+        update_interval=timedelta(seconds=MYAIR_SYNC_INTERVAL),
     )
 
     # Fetch initial data so we have data when entities subscribe
@@ -86,16 +89,14 @@ async def async_setup_entry(hass, config_entry):
     else:
         device = None
 
-    hass.data[DOMAIN] = {
+    hass.data[DOMAIN][url] = {
         'coordinator': coordinator,
         'async_set_data': async_set_data,
         'device': device,
     }
     
-    # Load Platforms
+    # Setup Platforms
     for platform in MYAIR_PLATFORMS:
-        hass.async_create_task(
-            hass.helpers.discovery.async_load_platform(platform, DOMAIN, {}, config_entry.data)
+        hass.config_entries.async_forward_entry_setup(
+            config_entry, platform
         )
-
-    return True

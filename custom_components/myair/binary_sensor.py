@@ -3,26 +3,29 @@ from .const import DOMAIN
 from homeassistant.components.binary_sensor import BinarySensorEntity, DEVICE_CLASS_MOTION
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    pass
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir motion platform."""
     
-    coordinator = hass.data[DOMAIN]['coordinator']
+    my = hass.data[DOMAIN][config_entry.data.get('url')]
 
-    if('aircons' in coordinator.data):
+
+    if('aircons' in my.coordinator.data):
         entities = []
-        for _, acx in enumerate(coordinator.data['aircons']):
-            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+        for _, acx in enumerate(my.coordinator.data['aircons']):
+            for _, zx in enumerate(my.coordinator.data['aircons'][acx]['zones']):
                 # Only add motion sensor when motion is enabled
-                if(coordinator.data['aircons'][acx]['zones'][zx]['motionConfig'] == 0):
-                    entities.append(MyAirZoneMotion(hass, acx, zx))
+                if(my.coordinator.data['aircons'][acx]['zones'][zx]['motionConfig'] == 0):
+                    entities.append(MyAirZoneMotion(my, acx, zx))
         async_add_entities(entities)
     return True
              
 
 class MyAirZoneMotion(BinarySensorEntity):
 
-    def __init__(self, hass, acx, zx):
-        self.coordinator = hass.data[DOMAIN]['coordinator']
-        self.device = hass.data[DOMAIN]['device']
+    def __init__(self, my, acx, zx):
+        self.extend(my)
         self.acx = acx
         self.zx = zx
 

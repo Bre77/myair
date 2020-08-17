@@ -15,27 +15,27 @@ from homeassistant.components.cover import (
 )
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    pass
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir cover platform."""
     
-    coordinator = hass.data[DOMAIN]['coordinator']
+    my = hass.data[DOMAIN][config_entry.data.get('url')]
 
-    if('aircons' in coordinator.data):
+    if('aircons' in my.coordinator.data):
         entities = []
-        for _, acx in enumerate(coordinator.data['aircons']):
-            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
+        for _, acx in enumerate(my.coordinator.data['aircons']):
+            for _, zx in enumerate(my.coordinator.data['aircons'][acx]['zones']):
                 # Only add zone damper controls when zone in damper control.
-                if(coordinator.data['aircons'][acx]['zones'][zx]['type'] == 0):
-                    entities.append(MyAirZoneDamper(hass, acx, zx))
+                if(my.coordinator.data['aircons'][acx]['zones'][zx]['type'] == 0):
+                    entities.append(MyAirZoneDamper(my, acx, zx))
         async_add_entities(entities)
-    return True
              
 
 class MyAirZoneDamper(CoverEntity):
 
-    def __init__(self, hass, acx, zx):
-        self.coordinator = hass.data[DOMAIN]['coordinator']
-        self.async_set_data = hass.data[DOMAIN]['async_set_data']
-        self.device = hass.data[DOMAIN]['device']
+    def __init__(self, my, acx, zx):
+        self.extend(my)
         self.acx = acx
         self.zx = zx
 
