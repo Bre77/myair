@@ -4,7 +4,7 @@ import logging
 import json
 import asyncio
 from datetime import timedelta
-from aiohttp import request, ClientError, ClientTimeout
+from aiohttp import request, ClientError, ClientTimeout, ServerConnectionError
 
 from .const import *
 
@@ -40,8 +40,10 @@ async def async_setup_entry(hass, config_entry):
                 async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
-            #except ConnectionResetError:
-            #    continue
+            except ConnectionResetError:
+                pass
+            except ServerConnectionError:
+                pass
             except ClientError as err:
                 raise UpdateFailed(err)
 
