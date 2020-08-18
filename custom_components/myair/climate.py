@@ -170,10 +170,10 @@ class MyAirAC(ClimateEntity):
 
 class MyAirZone(ClimateEntity):
 
-    def __init__(self, hass, acx, zx):
-        self.coordinator = hass.data[DOMAIN]['coordinator']
-        self.async_set_data = hass.data[DOMAIN]['async_set_data']
-        self.device = hass.data[DOMAIN]['device']
+    def __init__(self, my, acx, zx):
+        self.coordinator = my['coordinator']
+        self.async_set_data = my['async_set_data']
+        self.device = my['device']
         self.acx = acx
         self.zx = zx
 
