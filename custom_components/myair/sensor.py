@@ -81,7 +81,9 @@ class MyAirZoneVent(Entity):
 class MyAirZoneSignal(Entity):
 
     def __init__(self, my, acx, zx):
-        self.extend(my)
+        self.coordinator = my['coordinator']
+        self.async_set_data = my['async_set_data']
+        self.device = my['device']
         self.acx = acx
         self.zx = zx
 
