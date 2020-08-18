@@ -1,6 +1,6 @@
 {
     "domain": "myair",
-    "name": "Advantage Air",
+    "name": "MyAir & e-zone",
     "config_flow": true,
     "documentation": "https://github.com/Bre77/myair",
     "issue_tracker": "https://github.com/Bre77/myair/issues",

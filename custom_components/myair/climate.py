@@ -26,6 +26,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_FAN_MODE,
 )
+import logging
 
 MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
@@ -34,29 +35,33 @@ MYAIR_FAN_MODES = {"auto":FAN_AUTO, "low":FAN_LOW, "medium":FAN_MEDIUM, "high":F
 HASS_FAN_MODES = {v: k for k, v in MYAIR_FAN_MODES.items()}
 FAN_SPEEDS = {FAN_LOW: 30, FAN_MEDIUM: 60, FAN_HIGH: 100}
 
+_LOGGER = logging.getLogger(__name__)
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    return True
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir climate platform."""
     
-    coordinator = hass.data[DOMAIN]['coordinator']
+    my = hass.data[DOMAIN][config_entry.data['url']]
 
-    if('aircons' in coordinator.data):
-        entities = []
-        for _, acx in enumerate(coordinator.data['aircons']):
-            entities.append(MyAirAC(hass, acx))
-            for _, zx in enumerate(coordinator.data['aircons'][acx]['zones']):
-                # Only add zone climate control when zone is in temperature control
-                if(coordinator.data['aircons'][acx]['zones'][zx]['type'] != 0):
-                    entities.append(MyAirZone(hass, acx, zx))
-        async_add_entities(entities)
+    entities = []
+    for _, acx in enumerate(my['coordinator'].data['aircons']):
+        entities.append(MyAirAC(my, acx))
+        for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
+            # Only add zone climate control when zone is in temperature control
+            if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] != 0):
+                entities.append(MyAirZone(my, acx, zx))
+    async_add_entities(entities)
     return True            
 
 class MyAirAC(ClimateEntity):
     """MyAir AC unit"""
 
-    def __init__(self, hass, acx):
-        self.coordinator = hass.data[DOMAIN]['coordinator']
-        self.async_set_data = hass.data[DOMAIN]['async_set_data']
-        self.device = hass.data[DOMAIN]['device']
+    def __init__(self, my, acx):
+        self.coordinator = my['coordinator']
+        self.async_set_data = my['async_set_data']
+        self.device = my['device']
         self.acx = acx
 
     @property
