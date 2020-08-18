@@ -21,4 +21,4 @@ A sensor entity will be created for each zone that is temperature controlled to 
 A sensor entity will be created for each zone that has a wireless temperature/motion sensors that reports its RSSI.
 
 ### Binary Sensor
-A sensor entity will be created for each zone that has a motion sensor.
+A binary sensor entity will be created for each zone that has a motion sensor.
