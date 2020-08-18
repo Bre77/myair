@@ -20,5 +20,5 @@ A cover entity will be created for each zone that is not temperature controlled,
 A sensor entity will be created for each zone that is temperature controlled to show how open the damper is.
 A sensor entity will be created for each zone that has a wireless temperature/motion sensors that reports its RSSI.
 
-# Binary Sensor
+### Binary Sensor
 A sensor entity will be created for each zone that has a motion sensor.
