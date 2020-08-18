@@ -30,7 +30,7 @@ async def async_setup(hass, config):
 
 async def async_setup_entry(hass, config_entry):
     """Set up MyAir Config."""
-    url = config_entry.data.get('url')
+    url = config_entry.data['url']
 
     async def async_update_data():
         data = {}
@@ -97,8 +97,8 @@ async def async_setup_entry(hass, config_entry):
     
     # Setup Platforms
     for platform in MYAIR_PLATFORMS:
-        hass.config_entries.async_forward_entry_setup(
-            config_entry, platform
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(config_entry, platform)
         )
     
     return True

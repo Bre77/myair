@@ -10,24 +10,25 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     
     my = hass.data[DOMAIN][config_entry.data.get('url')]
 
-    if('aircons' in my.coordinator.data):
-        entities = []
-        for _, acx in enumerate(my.coordinator.data['aircons']):
-            for _, zx in enumerate(my.coordinator.data['aircons'][acx]['zones']):
-                # Only show damper sensors when zone is in temperature control
-                if(my.coordinator.data['aircons'][acx]['zones'][zx]['type'] != 0):
-                    entities.append(MyAirZoneVent(my, acx, zx))
-                # Only show wireless signal strength sensors when using wireless sensors
-                if(my.coordinator.data['aircons'][acx]['zones'][zx]['rssi'] > 0):
-                    entities.append(MyAirZoneSignal(my, acx, zx))
-        async_add_entities(entities)   
+    entities = []
+    for _, acx in enumerate(my['coordinator'].data['aircons']):
+        for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
+            # Only show damper sensors when zone is in temperature control
+            if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] != 0):
+                entities.append(MyAirZoneVent(my, acx, zx))
+            # Only show wireless signal strength sensors when using wireless sensors
+            if(my['coordinator'].data['aircons'][acx]['zones'][zx]['rssi'] > 0):
+                entities.append(MyAirZoneSignal(my, acx, zx))
+    async_add_entities(entities)   
     return True
          
 
 class MyAirZoneVent(Entity):
 
     def __init__(self, my, acx, zx):
-        self.extend(my)
+        self.coordinator = my['coordinator']
+        self.async_set_data = my['async_set_data']
+        self.device = my['device']
         self.acx = acx
         self.zx = zx
 
