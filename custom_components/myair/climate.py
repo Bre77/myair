@@ -280,9 +280,9 @@ class MyAirZone(ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set the HVAC Mode and State"""
         if(hvac_mode == HVAC_MODE_OFF):
-            await self.async_set_data({self.acx:{"zones":{"state":MYAIR_ZONE_CLOSE}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
         else:
-            await self.async_set_data({self.acx:{"zones":{"state":MYAIR_ZONE_OPEN}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN}}}})
 
         # Update the data
         await self.coordinator.async_request_refresh()

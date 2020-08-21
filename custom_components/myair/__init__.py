@@ -3,6 +3,7 @@
 import logging
 import json
 import asyncio
+import collections.abc
 from datetime import timedelta
 from aiohttp import request, ClientError, ClientTimeout, ServerConnectionError
 
@@ -18,6 +19,14 @@ from homeassistant.helpers import device_registry, collection, entity_component
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 _LOGGER = logging.getLogger(__name__)
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 async def async_setup(hass, config):
     """Set up MyAir."""
@@ -37,7 +46,7 @@ async def async_setup_entry(hass, config_entry):
         count = 0
         while count < MYAIR_RETRY:      
             try:
-                async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=5)) as resp:
+                async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=4)) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
             except ConnectionResetError:
@@ -45,40 +54,54 @@ async def async_setup_entry(hass, config_entry):
             except ServerConnectionError:
                 pass
             except ClientError as err:
-                raise UpdateFailed(err)
+                raise UpdateFailed(f"Client Error {err}")
 
             if('aircons' in data):
                 return data
 
             count+=1
-            _LOGGER.debug(f"Waiting a second and then retrying, Try: {count}")
+            _LOGGER.debug(f"Waiting and then retrying, Try: {count}")
             await asyncio.sleep(1)
         raise UpdateFailed(f"Tried {MYAIR_RETRY} times to get MyAir data") 
-
-    async def async_set_data(change):
-        try:
-            async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}, timeout=ClientTimeout(total=5)) as resp:
-                assert resp.status == 200
-                data = await resp.json(content_type=None)
-        except ClientError as err:
-            raise UpdateFailed(err)
-
-        if(data['ack'] == False):
-            raise UpdateFailed(data['reason'])
-
-        await asyncio.sleep(1) #Give it time to make the change
-        return data['ack']
 
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name="MyAir",
+        name="MyAir&ezone",
         update_method=async_update_data,
         update_interval=timedelta(seconds=MYAIR_SYNC_INTERVAL),
     )
 
+    ready = True
+    queue = {}
+    async def async_set_data(change):
+        nonlocal ready
+        nonlocal queue
+        if change:
+            queue = update(queue,change)
+        if ready:
+            ready = False
+            while queue:
+                payload = queue
+                queue = {}
+                _LOGGER.warn(payload)
+                #try:
+                async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}, timeout=ClientTimeout(total=4)) as resp:
+                    data = await resp.json(content_type=None)
+                #except ClientError as err:
+                #    raise UpdateFailed(err)
+
+                if(data['ack'] == False):
+                    ready = True
+                    raise Exception(data['reason'])
+
+                await coordinator.async_refresh() # Confirm latest values have been set
+            ready = True
+        return True
+
     # Fetch initial data so we have data when entities subscribe
-    await coordinator.async_refresh()
+    while not coordinator.data:
+        await coordinator.async_refresh()
 
     if('system' in coordinator.data):
         device = {
