@@ -84,9 +84,8 @@ async def async_setup_entry(hass, config_entry):
             while queue:
                 payload = queue
                 queue = {}
-                _LOGGER.warn(payload)
                 #try:
-                async with request('GET', f"{url}/setAircon", params={'json':json.dumps(change)}, timeout=ClientTimeout(total=4)) as resp:
+                async with request('GET', f"{url}/setAircon", params={'json':json.dumps(payload)}, timeout=ClientTimeout(total=4)) as resp:
                     data = await resp.json(content_type=None)
                 #except ClientError as err:
                 #    raise UpdateFailed(err)
@@ -95,7 +94,7 @@ async def async_setup_entry(hass, config_entry):
                     ready = True
                     raise Exception(data['reason'])
 
-                await coordinator.async_refresh() # Confirm latest values have been set
+                #await coordinator.async_refresh() # Confirm latest values have been set
             ready = True
         return True
 
