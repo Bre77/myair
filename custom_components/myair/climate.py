@@ -1,4 +1,4 @@
-from .const import DOMAIN
+from .const import DOMAIN, MYAIR_ZONE_OPEN, MYAIR_ZONE_CLOSE
 
 from homeassistant.const import (
     ATTR_TEMPERATURE,
@@ -224,18 +224,18 @@ class MyAirZone(ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if(self.coordinator.data['aircons'][self.acx]['info']['state'] == "on"):
-            return MYAIR_HVAC_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['mode'],HVAC_MODE_OFF)
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
+            return HVAC_MODE_FAN_ONLY
         else:
             return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self):
-        return [HVAC_MODE_OFF,HVAC_MODE_COOL,HVAC_MODE_HEAT,HVAC_MODE_FAN_ONLY,HVAC_MODE_DRY]
+        return [HVAC_MODE_OFF,HVAC_MODE_FAN_ONLY]
 
     @property
     def fan_mode(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == "open"):
+        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
             if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_LOW]+10)):
                 return FAN_LOW
             elif (self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_MEDIUM]+10)):
@@ -280,9 +280,9 @@ class MyAirZone(ClimateEntity):
     async def async_set_hvac_mode(self, hvac_mode):
         """Set the HVAC Mode and State"""
         if(hvac_mode == HVAC_MODE_OFF):
-            await self.async_set_data({self.acx:{"info":{"state":"off"}}})
+            await self.async_set_data({self.acx:{"zones":{"state":MYAIR_ZONE_CLOSE}}})
         else:
-            await self.async_set_data({self.acx:{"info":{"state":"on", "mode": HASS_HVAC_MODES.get(hvac_mode)}}})
+            await self.async_set_data({self.acx:{"zones":{"state":MYAIR_ZONE_OPEN}}})
 
         # Update the data
         await self.coordinator.async_request_refresh()
@@ -290,9 +290,9 @@ class MyAirZone(ClimateEntity):
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
         if(fan_mode == FAN_OFF):
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"close"}}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
         else:
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":"open", "value": FAN_SPEEDS[fan_mode]}}}})
+            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": FAN_SPEEDS[fan_mode]}}}})
 
         # Update the data
         await self.coordinator.async_request_refresh()
