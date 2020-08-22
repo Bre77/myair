@@ -24,6 +24,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
          
 
 class MyAirZoneVent(Entity):
+    """MyAir Zone Vent"""
 
     def __init__(self, my, acx, zx):
         self.coordinator = my['coordinator']
@@ -38,7 +39,7 @@ class MyAirZoneVent(Entity):
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}-vent"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-sensor:vent"
 
     @property
     def state(self):
@@ -79,6 +80,7 @@ class MyAirZoneVent(Entity):
         await self.coordinator.async_request_refresh()
 
 class MyAirZoneSignal(Entity):
+    """MyAir Zone Signal"""
 
     def __init__(self, my, acx, zx):
         self.coordinator = my['coordinator']
@@ -93,7 +95,7 @@ class MyAirZoneSignal(Entity):
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}-signal"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-sensor:signal"
 
     @property
     def state(self):

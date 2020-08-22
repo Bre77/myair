@@ -34,6 +34,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
              
 
 class MyAirZoneDamper(CoverEntity):
+    """MyAir Zone Damper"""
 
     def __init__(self, my, acx, zx):
         self.coordinator = my['coordinator']
@@ -44,11 +45,11 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def name(self):
-        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Duct"
+        return f"{self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']} Vent"
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}-vent"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-cover"
 
     @property
     def device_class(self):
@@ -95,11 +96,11 @@ class MyAirZoneDamper(CoverEntity):
 
     async def async_open_cover(self, **kwargs):
         await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": 100}}}})
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_close_cover(self, **kwargs):
         await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs):
         position = round(kwargs.get(ATTR_POSITION)/5)*5
@@ -108,7 +109,7 @@ class MyAirZoneDamper(CoverEntity):
         else:
             await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": position}}}})
 
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""

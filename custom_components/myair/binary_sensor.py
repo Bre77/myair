@@ -23,6 +23,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
              
 
 class MyAirZoneMotion(BinarySensorEntity):
+    """MyAir Zone Motion"""
 
     def __init__(self, my, acx, zx):
         self.coordinator = my['coordinator']
@@ -37,7 +38,7 @@ class MyAirZoneMotion(BinarySensorEntity):
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}-motion"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-binary:motion"
 
     @property
     def device_class(self):

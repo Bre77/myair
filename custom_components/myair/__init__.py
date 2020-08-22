@@ -67,7 +67,7 @@ async def async_setup_entry(hass, config_entry):
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name="MyAir&ezone",
+        name="MyAir",
         update_method=async_update_data,
         update_interval=timedelta(seconds=MYAIR_SYNC_INTERVAL),
     )
@@ -77,25 +77,24 @@ async def async_setup_entry(hass, config_entry):
     async def async_set_data(change):
         nonlocal ready
         nonlocal queue
-        if change:
-            queue = update(queue,change)
+        queue = update(queue,change)
         if ready:
             ready = False
             while queue:
-                payload = queue
-                queue = {}
-                #try:
-                async with request('GET', f"{url}/setAircon", params={'json':json.dumps(payload)}, timeout=ClientTimeout(total=4)) as resp:
-                    data = await resp.json(content_type=None)
-                #except ClientError as err:
-                #    raise UpdateFailed(err)
+                while queue:
+                    payload = queue
+                    queue = {}
+                    #try:
+                    async with request('GET', f"{url}/setAircon", params={'json':json.dumps(payload)}, timeout=ClientTimeout(total=4)) as resp:
+                        data = await resp.json(content_type=None)
+                    #except ClientError as err:
+                    #    raise UpdateFailed(err)
 
-                if(data['ack'] == False):
-                    ready = True
-                    raise Exception(data['reason'])
-
-                #await coordinator.async_refresh() # Confirm latest values have been set
-            ready = True
+                    if(data['ack'] == False):
+                        ready = True
+                        raise Exception(data['reason'])
+                await coordinator.async_refresh() # Request refresh once queue is empty
+            ready = True # Ready only once refresh has finished and queue is still empty
         return True
 
     # Fetch initial data so we have data when entities subscribe
@@ -104,11 +103,11 @@ async def async_setup_entry(hass, config_entry):
 
     if('system' in coordinator.data):
         device = {
-            "identifiers": {(DOMAIN,coordinator.data['system'].get('rid',"0"))},
-            "name": coordinator.data['system'].get('name'),
+            "identifiers": {(DOMAIN,coordinator.data['system']['rid'])},
+            "name": coordinator.data['system']['name'],
             "manufacturer": "Advantage Air",
-            "model": coordinator.data['system'].get('sysType'),
-            "sw_version": coordinator.data['system'].get('myAppRev'),
+            "model": coordinator.data['system']['sysType'],
+            "sw_version": coordinator.data['system']['myAppRev'],
         }
     else:
         device = None

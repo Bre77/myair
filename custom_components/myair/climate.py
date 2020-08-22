@@ -70,7 +70,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def unique_id(self):
-        return f"{self.acx}"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-climate"
 
     @property
     def temperature_unit(self):
@@ -147,14 +147,14 @@ class MyAirAC(ClimateEntity):
             await self.async_set_data({self.acx:{"info":{"state":"on", "mode": HASS_HVAC_MODES.get(hvac_mode)}}})
 
         # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
-        await self.async_set_data({self.acx:{"info":{"state":"on", "fan": HASS_FAN_MODES.get(fan_mode)}}})
+        await self.async_set_data({self.acx:{"info":{"fan": HASS_FAN_MODES.get(fan_mode)}}})
 
         # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set the Temperature"""
@@ -162,13 +162,14 @@ class MyAirAC(ClimateEntity):
         await self.async_set_data({self.acx:{"info":{"setTemp":temp}}})
 
         # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()
 
 
 class MyAirZone(ClimateEntity):
+    """MyAir Zone control"""
 
     def __init__(self, my, acx, zx):
         self.coordinator = my['coordinator']
@@ -183,7 +184,7 @@ class MyAirZone(ClimateEntity):
 
     @property
     def unique_id(self):
-        return f"{self.acx}-{self.zx}"
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-climate"
 
     @property
     def temperature_unit(self):
@@ -195,31 +196,19 @@ class MyAirZone(ClimateEntity):
 
     @property
     def target_temperature(self):
-        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
-        #    raise NotImplementedError
-        #else:
         return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['setTemp']
             
 
     @property
     def target_temperature_step(self):
-        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
-        #    raise NotImplementedError
-        #else:
         return 1
 
     @property
     def max_temp(self):
-        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
-        #    raise NotImplementedError
-        #else:
         return 32
 
     @property
     def min_temp(self):
-        #if(self.coordinator.data['aircons'][self.acx]['info']['myZone'] == 0):
-        #    raise NotImplementedError
-        #else:
         return 16
 
     @property
@@ -284,8 +273,7 @@ class MyAirZone(ClimateEntity):
         else:
             await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN}}}})
 
-        # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
@@ -294,16 +282,14 @@ class MyAirZone(ClimateEntity):
         else:
             await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": FAN_SPEEDS[fan_mode]}}}})
 
-        # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set the Temperature"""
         temp = kwargs.get(ATTR_TEMPERATURE)
         await self.async_set_data({self.acx:{"zones":{self.zx:{"setTemp":temp}}}})
 
-        # Update the data
-        await self.coordinator.async_request_refresh()
+        #await self.coordinator.async_request_refresh()
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()
