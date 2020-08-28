@@ -1,6 +1,8 @@
-from .const import DOMAIN, MYAIR_ZONE_OPEN, MYAIR_ZONE_CLOSE
+from .const import DOMAIN, MYAIR_SET_COUNTDOWN_VALUE
 
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers import config_validation as cv, entity_platform, service
+import voluptuous as vol
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     return True
@@ -12,8 +14,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     entities = []
     for _, acx in enumerate(my['coordinator'].data['aircons']):
-        entities.append(MyAirTimeTo(my, acx, 'Off'))
         entities.append(MyAirTimeTo(my, acx, 'On'))
+        entities.append(MyAirTimeTo(my, acx, 'Off'))
         for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
             # Only show damper sensors when zone is in temperature control
             if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] != 0):
@@ -21,7 +23,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             # Only show wireless signal strength sensors when using wireless sensors
             if(my['coordinator'].data['aircons'][acx]['zones'][zx]['rssi'] > 0):
                 entities.append(MyAirZoneSignal(my, acx, zx))
-    async_add_entities(entities)   
+    async_add_entities(entities)
+
+    platform = entity_platform.current_platform.get()
+    platform.async_register_entity_service('set_countdown',{vol.Required('minutes'): cv.positive_int},'set_countdown')
+
     return True
          
 class MyAirTimeTo(Entity):
@@ -65,6 +71,11 @@ class MyAirTimeTo(Entity):
     @property
     def device_info(self):
         return self.device
+
+    async def set_countdown(self, **kwargs):
+        if MYAIR_SET_COUNTDOWN_VALUE in kwargs:
+            value = min(720,max(0,int(kwargs[MYAIR_SET_COUNTDOWN_VALUE])))
+            await self.async_set_data({self.acx:{"info":{f"countDownTo{self.to}":value}}})
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""

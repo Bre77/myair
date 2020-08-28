@@ -1,9 +1,9 @@
-set_freshair:
-    description: Sets Fresh Air Status
+set_countdown:
+    description: Sets Count Down Time
     fields:
         entity_id:
-            description: Primary climate entity
-            example: "climate.ac"
-        status:
-            description: Free Air Status
-            example: "on"
+            description: Time To entity
+            example: "sensor.ac_time_to_on"
+        minutes:
+            description: Minutes until action
+            example: "60"
