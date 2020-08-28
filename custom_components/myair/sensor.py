@@ -12,6 +12,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     entities = []
     for _, acx in enumerate(my['coordinator'].data['aircons']):
+        entities.append(MyAirTimeTo(my, acx, 'Off'))
+        entities.append(MyAirTimeTo(my, acx, 'On'))
         for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
             # Only show damper sensors when zone is in temperature control
             if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] != 0):
@@ -22,6 +24,58 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities)   
     return True
          
+class MyAirTimeTo(Entity):
+    """MyAir CountDown"""
+
+    def __init__(self, my, acx, to):
+        self.coordinator = my['coordinator']
+        self.async_set_data = my['async_set_data']
+        self.device = my['device']
+        self.acx = acx
+        self.to = to
+
+    @property
+    def name(self):
+        return f"{self.coordinator.data['aircons'][self.acx]['name']} Time To {self.to}"
+
+    @property
+    def unique_id(self):
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-sensor:timeto{self.to}"
+
+    @property
+    def state(self):
+        return self.coordinator.data['aircons'][self.acx]['info'][f"countDownTo{self.to}"]
+
+    @property
+    def unit_of_measurement(self):
+        return "%"
+
+    @property
+    def icon(self):
+        return ["mdi:timer-off-outline","mdi:timer-outline"][self.coordinator.data['aircons'][self.acx]['info'][f"countDownTo{self.to}"] > 0]
+
+    @property
+    def should_poll(self):
+        return False
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
+
+    @property
+    def device_info(self):
+        return self.device
+
+    async def async_added_to_hass(self):
+        """When entity is added to hass."""
+        self.async_on_remove(
+            self.coordinator.async_add_listener(
+                self.async_write_ha_state
+            )
+        )
+
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
 
 class MyAirZoneVent(Entity):
     """MyAir Zone Vent"""

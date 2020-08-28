@@ -95,7 +95,7 @@ async def async_setup_entry(hass, config_entry):
                         raise Exception(data['reason'])
                 await coordinator.async_refresh() # Request refresh once queue is empty
             ready = True # Ready only once refresh has finished and queue is still empty
-        return True
+        return
 
     # Fetch initial data so we have data when entities subscribe
     while not coordinator.data:
