@@ -14,7 +14,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if('aircons' in my['coordinator'].data):
         entities = []
         for _, acx in enumerate(my['coordinator'].data['aircons']):
-            if(my['coordinator'].data['aircons'][acx]['freshAirStatus'] != "none"):
+            if(my['coordinator'].data['aircons'][acx]['info']['freshAirStatus'] != "none"):
                 entities.append(MyAirZoneFreshAir(my, acx))
         async_add_entities(entities)
     return True
@@ -36,11 +36,7 @@ class MyAirZoneFreshAir(ToggleEntity):
 
     @property
     def unique_id(self):
-        return f"{self.coordinator.data['system']['rid']}-{self.acx}-{self.zx}-toggle:freshair"
-
-    #@property
-    #def device_class(self):
-    #    return DEVICE_CLASS_MOTION 
+        return f"{self.coordinator.data['system']['rid']}-{self.acx}-toggle:freshair"
 
     @property
     def is_on(self):
@@ -51,12 +47,22 @@ class MyAirZoneFreshAir(ToggleEntity):
         return False
 
     @property
+    def icon(self):
+        return "mdi:air-filter"
+    
+    @property
     def available(self):
         return self.coordinator.last_update_success
 
     @property
     def device_info(self):
         return self.device
+
+    async def async_turn_on(self, **kwargs):
+        await self.async_set_data({self.acx:{"zones":{"info":{"freshAirStatus":"on"}}}})
+
+    async def async_turn_off(self, **kwargs):
+        await self.async_set_data({self.acx:{"zones":{"info":{"freshAirStatus":"off"}}}})
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""

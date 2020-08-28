@@ -36,7 +36,7 @@ class MyAirTimeTo(Entity):
 
     @property
     def name(self):
-        return f"{self.coordinator.data['aircons'][self.acx]['name']} Time To {self.to}"
+        return f"{self.coordinator.data['aircons'][self.acx]['info']['name']} Time To {self.to}"
 
     @property
     def unique_id(self):
@@ -48,7 +48,7 @@ class MyAirTimeTo(Entity):
 
     @property
     def unit_of_measurement(self):
-        return "%"
+        return "min"
 
     @property
     def icon(self):
