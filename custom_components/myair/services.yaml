@@ -1,5 +1,5 @@
-set_countdown:
-    description: Sets Count Down Time
+set_time_to:
+    description: Sets Time To On/Off
     fields:
         entity_id:
             description: Time To entity

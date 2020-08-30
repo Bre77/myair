@@ -26,7 +26,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities(entities)
 
     platform = entity_platform.current_platform.get()
-    platform.async_register_entity_service('set_countdown',{vol.Required('minutes'): cv.positive_int},'set_countdown')
+    platform.async_register_entity_service('set_time_to',{vol.Required('minutes'): cv.positive_int},'set_time_to')
 
     return True
          
@@ -72,7 +72,7 @@ class MyAirTimeTo(Entity):
     def device_info(self):
         return self.device
 
-    async def set_countdown(self, **kwargs):
+    async def set_time_to(self, **kwargs):
         if MYAIR_SET_COUNTDOWN_VALUE in kwargs:
             value = min(720,max(0,int(kwargs[MYAIR_SET_COUNTDOWN_VALUE])))
             await self.async_set_data({self.acx:{"info":{f"countDownTo{self.to}":value}}})
