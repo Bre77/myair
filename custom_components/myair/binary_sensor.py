@@ -17,7 +17,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             entities.append(MyAirZoneFilter(my, acx))
             for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
                 # Only add motion sensor when motion is enabled
-                if(my['coordinator'].data['aircons'][acx]['zones'][zx]['motionConfig'] == 0):
+                if(my['coordinator'].data['aircons'][acx]['zones'][zx]['motionConfig'] == 2):
                     entities.append(MyAirZoneMotion(my, acx, zx))
         async_add_entities(entities)
     return True
