@@ -44,7 +44,8 @@ async def async_setup_entry(hass, config_entry):
     async def async_update_data():
         data = {}
         count = 0
-        while count < MYAIR_RETRY:      
+        while count < MYAIR_RETRY: 
+            count+=1     
             try:
                 async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=4)) as resp:
                     assert resp.status == 200
@@ -58,10 +59,9 @@ async def async_setup_entry(hass, config_entry):
 
             if('aircons' in data):
                 return data
-
-            count+=1
+            
             _LOGGER.debug(f"Waiting and then retrying, Try: {count}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(count)
         raise UpdateFailed(f"Tried {MYAIR_RETRY} times to get MyAir data") 
 
     coordinator = DataUpdateCoordinator(
