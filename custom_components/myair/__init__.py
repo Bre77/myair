@@ -93,6 +93,7 @@ async def async_setup_entry(hass, config_entry):
                     if(data['ack'] == False):
                         ready = True
                         raise Exception(data['reason'])
+                await asyncio.sleep(1)
                 await coordinator.async_refresh() # Request refresh once queue is empty
             ready = True # Ready only once refresh has finished and queue is still empty
         return
