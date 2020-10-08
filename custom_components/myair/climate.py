@@ -28,45 +28,58 @@ from homeassistant.components.climate.const import (
 )
 import logging
 
-MYAIR_HVAC_MODES = {"heat":HVAC_MODE_HEAT, "cool":HVAC_MODE_COOL, "vent":HVAC_MODE_FAN_ONLY, "dry":HVAC_MODE_DRY}
+MYAIR_HVAC_MODES = {
+    "heat": HVAC_MODE_HEAT,
+    "cool": HVAC_MODE_COOL,
+    "vent": HVAC_MODE_FAN_ONLY,
+    "dry": HVAC_MODE_DRY,
+}
 HASS_HVAC_MODES = {v: k for k, v in MYAIR_HVAC_MODES.items()}
 
-MYAIR_FAN_MODES = {"auto":FAN_AUTO, "low":FAN_LOW, "medium":FAN_MEDIUM, "high":FAN_HIGH}
+MYAIR_FAN_MODES = {
+    "auto": FAN_AUTO,
+    "low": FAN_LOW,
+    "medium": FAN_MEDIUM,
+    "high": FAN_HIGH,
+}
 HASS_FAN_MODES = {v: k for k, v in MYAIR_FAN_MODES.items()}
 FAN_SPEEDS = {FAN_LOW: 30, FAN_MEDIUM: 60, FAN_HIGH: 100}
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     return True
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir climate platform."""
-    
-    my = hass.data[DOMAIN][config_entry.data['url']]
+
+    my = hass.data[DOMAIN][config_entry.data["url"]]
 
     entities = []
-    for _, acx in enumerate(my['coordinator'].data['aircons']):
+    for _, acx in enumerate(my["coordinator"].data["aircons"]):
         entities.append(MyAirAC(my, acx))
-        for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
+        for _, zx in enumerate(my["coordinator"].data["aircons"][acx]["zones"]):
             # Only add zone climate control when zone is in temperature control
-            if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] != 0):
+            if my["coordinator"].data["aircons"][acx]["zones"][zx]["type"] != 0:
                 entities.append(MyAirZone(my, acx, zx))
     async_add_entities(entities)
-    return True            
+    return True
+
 
 class MyAirAC(ClimateEntity):
     """MyAir AC unit"""
 
     def __init__(self, my, acx):
-        self.coordinator = my['coordinator']
-        self.async_set_data = my['async_set_data']
-        self.device = my['device']
+        self.coordinator = my["coordinator"]
+        self.async_set_data = my["async_set_data"]
+        self.device = my["device"]
         self.acx = acx
 
     @property
     def name(self):
-        return self.coordinator.data['aircons'][self.acx]['info']['name']
+        return self.coordinator.data["aircons"][self.acx]["info"]["name"]
 
     @property
     def unique_id(self):
@@ -78,7 +91,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def target_temperature(self):
-        return self.coordinator.data['aircons'][self.acx]['info']['setTemp']
+        return self.coordinator.data["aircons"][self.acx]["info"]["setTemp"]
 
     @property
     def target_temperature_step(self):
@@ -94,19 +107,30 @@ class MyAirAC(ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if(self.coordinator.data['aircons'][self.acx]['info']['state'] == "on"):
-            return MYAIR_HVAC_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['mode'],self.coordinator.data['aircons'][self.acx]['info']['mode'])
+        if self.coordinator.data["aircons"][self.acx]["info"]["state"] == "on":
+            return MYAIR_HVAC_MODES.get(
+                self.coordinator.data["aircons"][self.acx]["info"]["mode"],
+                self.coordinator.data["aircons"][self.acx]["info"]["mode"],
+            )
         else:
             return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self):
-        return [HVAC_MODE_OFF,HVAC_MODE_COOL,HVAC_MODE_HEAT,HVAC_MODE_FAN_ONLY,HVAC_MODE_DRY]
+        return [
+            HVAC_MODE_OFF,
+            HVAC_MODE_COOL,
+            HVAC_MODE_HEAT,
+            HVAC_MODE_FAN_ONLY,
+            HVAC_MODE_DRY,
+        ]
 
     @property
     def fan_mode(self):
-        return MYAIR_FAN_MODES.get(self.coordinator.data['aircons'][self.acx]['info']['fan'],FAN_OFF)
-    
+        return MYAIR_FAN_MODES.get(
+            self.coordinator.data["aircons"][self.acx]["info"]["fan"], FAN_OFF
+        )
+
     @property
     def fan_modes(self):
         return [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
@@ -117,7 +141,7 @@ class MyAirAC(ClimateEntity):
 
     @property
     def device_state_attributes(self):
-        return self.coordinator.data['aircons'][self.acx]['info']
+        return self.coordinator.data["aircons"][self.acx]["info"]
 
     @property
     def should_poll(self):
@@ -134,35 +158,41 @@ class MyAirAC(ClimateEntity):
     async def async_added_to_hass(self):
         """When entity is added to hass."""
         self.async_on_remove(
-            self.coordinator.async_add_listener(
-                self.async_write_ha_state
-            )
+            self.coordinator.async_add_listener(self.async_write_ha_state)
         )
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set the HVAC Mode and State"""
-        if(hvac_mode == HVAC_MODE_OFF):
-            await self.async_set_data({self.acx:{"info":{"state":"off"}}})
+        if hvac_mode == HVAC_MODE_OFF:
+            await self.async_set_data({self.acx: {"info": {"state": "off"}}})
         else:
-            await self.async_set_data({self.acx:{"info":{"state":"on", "mode": HASS_HVAC_MODES.get(hvac_mode)}}})
+            await self.async_set_data(
+                {
+                    self.acx: {
+                        "info": {"state": "on", "mode": HASS_HVAC_MODES.get(hvac_mode)}
+                    }
+                }
+            )
 
         # Update the data
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
-        await self.async_set_data({self.acx:{"info":{"fan": HASS_FAN_MODES.get(fan_mode)}}})
+        await self.async_set_data(
+            {self.acx: {"info": {"fan": HASS_FAN_MODES.get(fan_mode)}}}
+        )
 
         # Update the data
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set the Temperature"""
         temp = kwargs.get(ATTR_TEMPERATURE)
-        await self.async_set_data({self.acx:{"info":{"setTemp":temp}}})
+        await self.async_set_data({self.acx: {"info": {"setTemp": temp}}})
 
         # Update the data
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()
@@ -172,15 +202,15 @@ class MyAirZone(ClimateEntity):
     """MyAir Zone control"""
 
     def __init__(self, my, acx, zx):
-        self.coordinator = my['coordinator']
-        self.async_set_data = my['async_set_data']
-        self.device = my['device']
+        self.coordinator = my["coordinator"]
+        self.async_set_data = my["async_set_data"]
+        self.device = my["device"]
         self.acx = acx
         self.zx = zx
 
     @property
     def name(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['name']
+        return self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["name"]
 
     @property
     def unique_id(self):
@@ -192,12 +222,13 @@ class MyAirZone(ClimateEntity):
 
     @property
     def current_temperature(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['measuredTemp']
+        return self.coordinator.data["aircons"][self.acx]["zones"][self.zx][
+            "measuredTemp"
+        ]
 
     @property
     def target_temperature(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['setTemp']
-            
+        return self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["setTemp"]
 
     @property
     def target_temperature_step(self):
@@ -213,21 +244,31 @@ class MyAirZone(ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
+        if (
+            self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["state"]
+            == MYAIR_ZONE_OPEN
+        ):
             return HVAC_MODE_FAN_ONLY
         else:
             return HVAC_MODE_OFF
 
     @property
     def hvac_modes(self):
-        return [HVAC_MODE_OFF,HVAC_MODE_FAN_ONLY]
+        return [HVAC_MODE_OFF, HVAC_MODE_FAN_ONLY]
 
     @property
     def fan_mode(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
-            if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_LOW]+10)):
+        if (
+            self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["state"]
+            == MYAIR_ZONE_OPEN
+        ):
+            if self.coordinator.data["aircons"][self.acx]["zones"][self.zx][
+                "value"
+            ] <= (FAN_SPEEDS[FAN_LOW] + 10):
                 return FAN_LOW
-            elif (self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value'] <= (FAN_SPEEDS[FAN_MEDIUM]+10)):
+            elif self.coordinator.data["aircons"][self.acx]["zones"][self.zx][
+                "value"
+            ] <= (FAN_SPEEDS[FAN_MEDIUM] + 10):
                 return FAN_MEDIUM
             else:
                 return FAN_HIGH
@@ -240,7 +281,7 @@ class MyAirZone(ClimateEntity):
 
     @property
     def device_state_attributes(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]
+        return self.coordinator.data["aircons"][self.acx]["zones"][self.zx]
 
     @property
     def supported_features(self):
@@ -261,35 +302,50 @@ class MyAirZone(ClimateEntity):
     async def async_added_to_hass(self):
         """When entity is added to hass."""
         self.async_on_remove(
-            self.coordinator.async_add_listener(
-                self.async_write_ha_state
-            )
+            self.coordinator.async_add_listener(self.async_write_ha_state)
         )
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set the HVAC Mode and State"""
-        if(hvac_mode == HVAC_MODE_OFF):
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
+        if hvac_mode == HVAC_MODE_OFF:
+            await self.async_set_data(
+                {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_CLOSE}}}}
+            )
         else:
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN}}}})
+            await self.async_set_data(
+                {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_OPEN}}}}
+            )
 
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode):
         """Set the Fan Mode"""
-        if(fan_mode == FAN_OFF):
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
+        if fan_mode == FAN_OFF:
+            await self.async_set_data(
+                {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_CLOSE}}}}
+            )
         else:
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": FAN_SPEEDS[fan_mode]}}}})
+            await self.async_set_data(
+                {
+                    self.acx: {
+                        "zones": {
+                            self.zx: {
+                                "state": MYAIR_ZONE_OPEN,
+                                "value": FAN_SPEEDS[fan_mode],
+                            }
+                        }
+                    }
+                }
+            )
 
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs):
         """Set the Temperature"""
         temp = kwargs.get(ATTR_TEMPERATURE)
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"setTemp":temp}}}})
+        await self.async_set_data({self.acx: {"zones": {self.zx: {"setTemp": temp}}}})
 
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()

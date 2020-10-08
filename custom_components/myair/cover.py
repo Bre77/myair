@@ -14,32 +14,33 @@ from homeassistant.components.cover import (
     ATTR_POSITION,
 )
 
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     return True
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up MyAir cover platform."""
-    
-    my = hass.data[DOMAIN][config_entry.data.get('url')]
+
+    my = hass.data[DOMAIN][config_entry.data.get("url")]
 
     entities = []
-    for _, acx in enumerate(my['coordinator'].data['aircons']):
-        for _, zx in enumerate(my['coordinator'].data['aircons'][acx]['zones']):
+    for _, acx in enumerate(my["coordinator"].data["aircons"]):
+        for _, zx in enumerate(my["coordinator"].data["aircons"][acx]["zones"]):
             # Only add zone damper controls when zone in damper control.
-            if(my['coordinator'].data['aircons'][acx]['zones'][zx]['type'] == 0):
+            if my["coordinator"].data["aircons"][acx]["zones"][zx]["type"] == 0:
                 entities.append(MyAirZoneDamper(my, acx, zx))
     async_add_entities(entities)
     return True
 
-             
 
 class MyAirZoneDamper(CoverEntity):
     """MyAir Zone Damper"""
 
     def __init__(self, my, acx, zx):
-        self.coordinator = my['coordinator']
-        self.async_set_data = my['async_set_data']
-        self.device = my['device']
+        self.coordinator = my["coordinator"]
+        self.async_set_data = my["async_set_data"]
+        self.device = my["device"]
         self.acx = acx
         self.zx = zx
 
@@ -61,7 +62,10 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def is_closed(self):
-        return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_CLOSE
+        return (
+            self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["state"]
+            == MYAIR_ZONE_CLOSE
+        )
 
     @property
     def is_opening(self):
@@ -73,14 +77,20 @@ class MyAirZoneDamper(CoverEntity):
 
     @property
     def current_cover_position(self):
-        if(self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN):
-            return self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['value']
+        if (
+            self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["state"]
+            == MYAIR_ZONE_OPEN
+        ):
+            return self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["value"]
         else:
             return 0
 
     @property
     def icon(self):
-        return ["mdi:fan-off","mdi:fan"][self.coordinator.data['aircons'][self.acx]['zones'][self.zx]['state'] == MYAIR_ZONE_OPEN]
+        return ["mdi:fan-off", "mdi:fan"][
+            self.coordinator.data["aircons"][self.acx]["zones"][self.zx]["state"]
+            == MYAIR_ZONE_OPEN
+        ]
 
     @property
     def should_poll(self):
@@ -95,28 +105,40 @@ class MyAirZoneDamper(CoverEntity):
         return self.device
 
     async def async_open_cover(self, **kwargs):
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": 100}}}})
-        #await self.coordinator.async_request_refresh()
+        await self.async_set_data(
+            {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_OPEN, "value": 100}}}}
+        )
+        # await self.coordinator.async_request_refresh()
 
     async def async_close_cover(self, **kwargs):
-        await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
-        #await self.coordinator.async_request_refresh()
+        await self.async_set_data(
+            {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_CLOSE}}}}
+        )
+        # await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs):
-        position = round(kwargs.get(ATTR_POSITION)/5)*5
-        if(position == 0):
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_CLOSE}}}})
+        position = round(kwargs.get(ATTR_POSITION) / 5) * 5
+        if position == 0:
+            await self.async_set_data(
+                {self.acx: {"zones": {self.zx: {"state": MYAIR_ZONE_CLOSE}}}}
+            )
         else:
-            await self.async_set_data({self.acx:{"zones":{self.zx:{"state":MYAIR_ZONE_OPEN, "value": position}}}})
+            await self.async_set_data(
+                {
+                    self.acx: {
+                        "zones": {
+                            self.zx: {"state": MYAIR_ZONE_OPEN, "value": position}
+                        }
+                    }
+                }
+            )
 
-        #await self.coordinator.async_request_refresh()
+        # await self.coordinator.async_request_refresh()
 
     async def async_added_to_hass(self):
         """When entity is added to hass."""
         self.async_on_remove(
-            self.coordinator.async_add_listener(
-                self.async_write_ha_state
-            )
+            self.coordinator.async_add_listener(self.async_write_ha_state)
         )
 
     async def async_update(self):

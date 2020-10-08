@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def update(d, u):
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
@@ -27,6 +28,7 @@ def update(d, u):
         else:
             d[k] = v
     return d
+
 
 async def async_setup(hass, config):
     """Set up MyAir."""
@@ -37,17 +39,20 @@ async def async_setup(hass, config):
         )
     return True
 
+
 async def async_setup_entry(hass, config_entry):
     """Set up MyAir Config."""
-    url = config_entry.data['url']
+    url = config_entry.data["url"]
 
     async def async_update_data():
         data = {}
         count = 0
-        while count < MYAIR_RETRY: 
-            count+=1     
+        while count < MYAIR_RETRY:
+            count += 1
             try:
-                async with request('GET', f"{url}/getSystemData", timeout=ClientTimeout(total=4)) as resp:
+                async with request(
+                    "GET", f"{url}/getSystemData", timeout=ClientTimeout(total=4)
+                ) as resp:
                     assert resp.status == 200
                     data = await resp.json(content_type=None)
             except ConnectionResetError:
@@ -57,12 +62,12 @@ async def async_setup_entry(hass, config_entry):
             except ClientError as err:
                 raise UpdateFailed(f"Client Error {err}")
 
-            if('aircons' in data):
+            if "aircons" in data:
                 return data
-            
+
             _LOGGER.debug(f"Waiting and then retrying, Try: {count}")
             await asyncio.sleep(count)
-        raise UpdateFailed(f"Tried {MYAIR_RETRY} times to get MyAir data") 
+        raise UpdateFailed(f"Tried {MYAIR_RETRY} times to get MyAir data")
 
     coordinator = DataUpdateCoordinator(
         hass,
@@ -74,55 +79,63 @@ async def async_setup_entry(hass, config_entry):
 
     ready = True
     queue = {}
+
     async def async_set_data(change):
         nonlocal ready
         nonlocal queue
-        queue = update(queue,change)
+        queue = update(queue, change)
         if ready:
             ready = False
             while queue:
                 while queue:
                     payload = queue
                     queue = {}
-                    #try:
-                    async with request('GET', f"{url}/setAircon", params={'json':json.dumps(payload)}, timeout=ClientTimeout(total=4)) as resp:
+                    # try:
+                    async with request(
+                        "GET",
+                        f"{url}/setAircon",
+                        params={"json": json.dumps(payload)},
+                        timeout=ClientTimeout(total=4),
+                    ) as resp:
                         data = await resp.json(content_type=None)
-                    #except ClientError as err:
+                    # except ClientError as err:
                     #    raise UpdateFailed(err)
 
-                    if(data['ack'] == False):
+                    if data["ack"] == False:
                         ready = True
-                        raise Exception(data['reason'])
+                        raise Exception(data["reason"])
                 await asyncio.sleep(1)
-                await coordinator.async_refresh() # Request refresh once queue is empty
-            ready = True # Ready only once refresh has finished and queue is still empty
+                await coordinator.async_refresh()  # Request refresh once queue is empty
+            ready = (
+                True  # Ready only once refresh has finished and queue is still empty
+            )
         return
 
     # Fetch initial data so we have data when entities subscribe
     while not coordinator.data:
         await coordinator.async_refresh()
 
-    if('system' in coordinator.data):
+    if "system" in coordinator.data:
         device = {
-            "identifiers": {(DOMAIN,coordinator.data['system']['rid'])},
-            "name": coordinator.data['system']['name'],
+            "identifiers": {(DOMAIN, coordinator.data["system"]["rid"])},
+            "name": coordinator.data["system"]["name"],
             "manufacturer": "Advantage Air",
-            "model": coordinator.data['system']['sysType'],
-            "sw_version": coordinator.data['system']['myAppRev'],
+            "model": coordinator.data["system"]["sysType"],
+            "sw_version": coordinator.data["system"]["myAppRev"],
         }
     else:
         device = None
 
     hass.data[DOMAIN][url] = {
-        'coordinator': coordinator,
-        'async_set_data': async_set_data,
-        'device': device,
+        "coordinator": coordinator,
+        "async_set_data": async_set_data,
+        "device": device,
     }
-    
+
     # Setup Platforms
     for platform in MYAIR_PLATFORMS:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(config_entry, platform)
         )
-    
+
     return True
