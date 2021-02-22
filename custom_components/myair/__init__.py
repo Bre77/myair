@@ -32,6 +32,7 @@ def update(d, u):
 
 async def async_setup(hass, config):
     """Set up MyAir."""
+    _LOGGER.warning("This integration has been replaced. See https://www.home-assistant.io/integrations/advantage_air/")
     hass.data[DOMAIN] = {}
     for platform in MYAIR_PLATFORMS:
         hass.async_create_task(
