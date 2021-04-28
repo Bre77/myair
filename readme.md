@@ -1,3 +1,5 @@
+This project has been integrated into Home Assistant Core now, see https://www.home-assistant.io/integrations/advantage_air/
+
 # MyAir & e-zone Integration
 
 A home assistant integration for Advantage Air "MyAir" and "e-zone" airconditioning control systems, which adds Climate, Motion, and Vent entities into Home Assistant
